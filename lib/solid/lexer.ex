@@ -265,11 +265,6 @@ defmodule Solid.Lexer do
         acc = [{:comparison, build_loc(line, column), String.to_atom(operator)} | acc]
         tokenize(rest, line, column + 1, acc)
 
-      # "contains" keyword
-      <<"contains", rest::binary>> ->
-        acc = [{:comparison, build_loc(line, column), :contains} | acc]
-        tokenize(rest, line, column + 8, acc)
-
       # Single or double quotes
       <<quote_char::binary-size(1), _rest::binary>> when quote_char in ["'", "\""] ->
         with {:string, string_value, quotes, rest, end_line, end_column} <-
@@ -301,12 +296,18 @@ defmodule Solid.Lexer do
             tokenize(rest, end_line, end_column, acc)
         end
 
-      # Identifiers
+      # Identifiers and "contains" keyword (checked after full identifier is parsed)
       <<letter::binary-size(1), rest::binary>> when letter in @letters ->
         {:identifier, identifier, rest, end_line, end_column} =
           identifier(rest, line, column + 1, [letter])
 
-        acc = [{:identifier, build_loc(line, column), identifier} | acc]
+        token =
+          case identifier do
+            "contains" -> {:comparison, build_loc(line, column), :contains}
+            _ -> {:identifier, build_loc(line, column), identifier}
+          end
+
+        acc = [token | acc]
         tokenize(rest, end_line, end_column, acc)
 
       # Empty string (end of input)
@@ -356,11 +357,6 @@ defmodule Solid.Lexer do
         acc = [{:comparison, build_loc(line, column), String.to_atom(operator)} | acc]
         tokenize_for_liquid_tag(rest, line, column + 1, acc)
 
-      # "contains" keyword
-      <<"contains", rest::binary>> ->
-        acc = [{:comparison, build_loc(line, column), :contains} | acc]
-        tokenize_for_liquid_tag(rest, line, column + 8, acc)
-
       # Single or double quotes
       <<quote_char::binary-size(1), _rest::binary>> when quote_char in ["'", "\""] ->
         with {:string, string_value, quotes, rest, end_line, end_column} <-
@@ -392,12 +388,18 @@ defmodule Solid.Lexer do
             tokenize_for_liquid_tag(rest, end_line, end_column, acc)
         end
 
-      # Identifiers
+      # Identifiers and "contains" keyword (checked after full identifier is parsed)
       <<letter::binary-size(1), rest::binary>> when letter in @letters ->
         {:identifier, identifier, rest, end_line, end_column} =
           identifier(rest, line, column + 1, [letter])
 
-        acc = [{:identifier, build_loc(line, column), identifier} | acc]
+        token =
+          case identifier do
+            "contains" -> {:comparison, build_loc(line, column), :contains}
+            _ -> {:identifier, build_loc(line, column), identifier}
+          end
+
+        acc = [token | acc]
         tokenize_for_liquid_tag(rest, end_line, end_column, acc)
 
       # Empty string (end of input)

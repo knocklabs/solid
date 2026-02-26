@@ -440,4 +440,16 @@ defmodule Solid.Tags.IfTagTest do
 
     assert {[%Solid.Text{text: " empty "}], _} = Renderable.render(tag, context, [])
   end
+
+  test "variable name starting with 'contains' is not mistaken for the contains operator" do
+    template = ~s<{% if containsItems == false %} yes {% else %} no {% endif %}>
+
+    {:ok, tag, _rest} = parse(template)
+
+    context_false = %Solid.Context{vars: %{"containsItems" => false}}
+    assert {[%Solid.Text{text: " yes "}], _} = Renderable.render(tag, context_false, [])
+
+    context_true = %Solid.Context{vars: %{"containsItems" => true}}
+    assert {[%Solid.Text{text: " no "}], _} = Renderable.render(tag, context_true, [])
+  end
 end

@@ -416,6 +416,34 @@ defmodule Solid.LexerTest do
              }
     end
 
+    test "identifier starting with 'contains' is not split into operator + remainder" do
+      context = "{{containsItems}}" |> build_context
+
+      assert Lexer.tokenize_object(context) == {
+               :ok,
+               [
+                 {:identifier, %{column: 3, line: 1}, "containsItems"},
+                 {:end, %{column: 16, line: 1}}
+               ],
+               %ParserContext{rest: "", line: 1, column: 18, mode: :normal}
+             }
+    end
+
+    test "identifier starting with 'contains' alongside the 'contains' operator" do
+      context = "{{containsItems contains 'foo'}}" |> build_context
+
+      assert Lexer.tokenize_object(context) == {
+               :ok,
+               [
+                 {:identifier, %{column: 3, line: 1}, "containsItems"},
+                 {:comparison, %{column: 17, line: 1}, :contains},
+                 {:string, %{column: 26, line: 1}, "foo", ?'},
+                 {:end, %{column: 31, line: 1}}
+               ],
+               %ParserContext{rest: "", line: 1, column: 33, mode: :normal}
+             }
+    end
+
     test "specials" do
       context = "{{. | [ ] : , }}" |> build_context
 
